@@ -3,9 +3,9 @@
 
 description: Input Behavior To Toggle Layer
 
-compatible: "zmk,input-behavior-auto-layer"
+compatible: "zmk,input-processor-auto-layer"
 
-include: one_param.yaml
+include: ip_one_param.yaml
 
 properties:
     require-prior-idle-ms:

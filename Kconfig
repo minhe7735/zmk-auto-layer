@@ -5,7 +5,27 @@
 # SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 #
 
-DT_COMPAT_ZMK_INPUT_BEHAVIOR_AUTO_LAYER := zmk,input-behavior-auto-layer
-config ZMK_INPUT_BEHAVIOR_AUTO_LAYER
-		bool
-		default $(dt_compat_enabled,$(DT_COMPAT_ZMK_INPUT_BEHAVIOR_AUTO_LAYER))
+if !ZMK_SPLIT || ZMK_SPLIT_ROLE_CENTRAL
+
+config ZMK_INPUT_PROCESSOR_AUTO_LAYER
+    bool "Temporary Layer Input Processor"
+    default y
+    depends on DT_HAS_ZMK_INPUT_PROCESSOR_AUTO_LAYER_ENABLED
+
+if ZMK_INPUT_PROCESSOR_AUTO_LAYER
+config ZMK_PROCESSOR_AUTO_LAYER_MAX_EXCLUDED_POSITIONS
+    int "Maximum number of excluded positions"
+    default 8
+    range 1 32
+    help
+        Maximum number of key positions that can be excluded from
+        triggering auto layer deactivation. Each position requires
+        a 32-bit value in memory, so keep this reasonable for your
+        keyboard's resources.
+
+endif # ZMK_PROCESSOR_AUTO_LAYER
+
+endif # !ZMK_SPLIT || ZMK_SPLIT_ROLE_CENTRAL
+
+
+
