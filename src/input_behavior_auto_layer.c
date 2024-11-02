@@ -1,6 +1,7 @@
 #define DT_DRV_COMPAT zmk_input_behavior_auto_layer
 
 #include <zephyr/kernel.h>
+#include <zephyr/kconfig.h>
 #include <zephyr/device.h>
 #include <drivers/behavior.h>
 #include <zephyr/logging/log.h>
@@ -9,11 +10,9 @@
 #include <zmk/events/position_state_changed.h>
 #include <zmk/events/keycode_state_changed.h>
 
-#define TOG_LAYER_MAX_EXCLUDED_POSITIONS 8
-
 typedef struct {
   int32_t require_prior_idle_ms;
-  uint32_t excluded_positions[TOG_LAYER_MAX_EXCLUDED_POSITIONS];
+  uint32_t excluded_positions[CONFIG_ZMK_BEHAVIOR_AUTO_LAYER_MAX_EXCLUDED_POSITIONS];
   uint8_t num_positions;
 } behavior_auto_layer_config_t;
 
@@ -25,7 +24,7 @@ typedef struct {
 } behavior_auto_layer_data_t;
 
 static inline bool is_position_excluded(const behavior_auto_layer_config_t *config, uint32_t position) {
-  if (config->num_positions > TOG_LAYER_MAX_EXCLUDED_POSITIONS) {
+  if (config->num_positions > CONFIG_ZMK_BEHAVIOR_AUTO_LAYER_MAX_EXCLUDED_POSITIONS) {
     return false;
   }
 
@@ -101,7 +100,7 @@ ZMK_SUBSCRIPTION(behavior_auto_layer, zmk_position_state_changed);
 ZMK_LISTENER(behavior_auto_layer_keycode, handle_keycode_state_changed);
 ZMK_SUBSCRIPTION(behavior_auto_layer_keycode, zmk_keycode_state_changed);
 
-#define TOG_LAYER_INST(n)                                                      \
+#define AUTO_LAYER_INST(n)                                                      \
 static behavior_auto_layer_data_t behavior_auto_layer_data_##n = {};             \
 static const behavior_auto_layer_config_t behavior_auto_layer_config_##n = {     \
   .require_prior_idle_ms = DT_PROP(DT_DRV_INST(0), require_prior_idle_ms),     \
@@ -114,4 +113,4 @@ BEHAVIOR_DT_INST_DEFINE(n, auto_layer_init, NULL,                               
                         POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,      \
                         &auto_layer_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(TOG_LAYER_INST)
+DT_INST_FOREACH_STATUS_OKAY(AUTO_LAYER_INST)

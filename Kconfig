@@ -6,6 +6,23 @@
 #
 
 DT_COMPAT_ZMK_INPUT_BEHAVIOR_AUTO_LAYER := zmk,input-behavior-auto-layer
-config ZMK_INPUT_BEHAVIOR_AUTO_LAYER
-		bool
-		default $(dt_compat_enabled,$(DT_COMPAT_ZMK_INPUT_BEHAVIOR_AUTO_LAYER))
+
+config ZMK_BEHAVIOR_AUTO_LAYER
+    bool
+    default $(dt_compat_enabled,$(DT_COMPAT_ZMK_INPUT_BEHAVIOR_AUTO_LAYER))
+    help
+        Enables auto layer behavior support in ZMK
+
+if ZMK_BEHAVIOR_AUTO_LAYER
+
+config ZMK_BEHAVIOR_AUTO_LAYER_MAX_EXCLUDED_POSITIONS
+    int "Maximum number of excluded positions"
+    default 8
+    range 1 32
+    help
+        Maximum number of key positions that can be excluded from
+        triggering auto layer deactivation. Each position requires
+        a 32-bit value in memory, so keep this reasonable for your
+        keyboard's resources.
+
+endif # ZMK_BEHAVIOR_AUTO_LAYER
