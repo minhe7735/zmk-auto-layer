@@ -62,11 +62,28 @@ static int handle_keycode_state_changed(const zmk_event_t *eh) {
   return ZMK_EV_EVENT_BUBBLE;
 }
 
+struct k_work_delayable layer_disable_works[ZMK_KEYMAP_LAYERS_LEN];
+
+static void layer_disable_cb(struct k_work *work) {
+  struct k_work_delayable *d_work = k_work_delayable_from_work(work);
+  int layer_index = ARRAY_INDEX(layer_disable_works, d_work);
+  const struct device *dev = DEVICE_DT_INST_GET(0);
+  processor_auto_layer_data_t *data = (processor_auto_layer_data_t *)dev->data;
+  if (zmk_keymap_layer_active(layer_index)) {
+    data->is_active = false;
+    zmk_keymap_layer_deactivate(layer_index);
+  }
+}
+
 static int auto_layer_handle_event(const struct device *dev,
                                    struct input_event *event,
                                    uint32_t param1,
                                    uint32_t param2,
                                    struct zmk_input_processor_state *state) {
+  if (param1 >= ZMK_KEYMAP_LAYERS_LEN) {
+    return -EINVAL;
+  }
+
   processor_auto_layer_data_t *data = (processor_auto_layer_data_t *)dev->data;
   const processor_auto_layer_config_t *cfg = dev->config;
 
@@ -77,6 +94,10 @@ static int auto_layer_handle_event(const struct device *dev,
     zmk_keymap_layer_activate(data->toggle_layer);
   }
 
+  if(param2 > 0) {
+    k_work_reschedule(&layer_disable_works[param1], K_MSEC(param2));
+  }
+
   return 0;
 }
 
@@ -85,6 +106,9 @@ static int auto_layer_init(const struct device *dev) {
   data->dev = dev;
   data->is_active = false;
   data->last_tapped_timestamp = 0;
+  for (int i = 0; i < ZMK_KEYMAP_LAYERS_LEN; i++) {
+    k_work_init_delayable(&layer_disable_works[i], layer_disable_cb);
+  }
   return 0;
 }
 
@@ -101,9 +125,9 @@ ZMK_SUBSCRIPTION(processor_auto_layer_keycode, zmk_keycode_state_changed);
 static processor_auto_layer_data_t processor_auto_layer_data_##n = {};                \
 static const uint32_t excluded_positions_##n[] = DT_INST_PROP(n, excluded_positions); \
 static const processor_auto_layer_config_t processor_auto_layer_config_##n = {        \
-  .require_prior_idle_ms = DT_PROP(DT_DRV_INST(0), require_prior_idle_ms),            \
-  .excluded_positions = excluded_positions_##n,                                       \
-  .num_positions = DT_INST_PROP_LEN(n, excluded_positions),                           \
+.require_prior_idle_ms = DT_PROP(DT_DRV_INST(0), require_prior_idle_ms),            \
+.excluded_positions = excluded_positions_##n,                                       \
+.num_positions = DT_INST_PROP_LEN(n, excluded_positions),                           \
 };                                                                                    \
 DEVICE_DT_INST_DEFINE(n, &auto_layer_init, NULL,                                      \
                       &processor_auto_layer_data_##n,                                 \

@@ -7,6 +7,6 @@
 / {
 /omit-if-no-ref/ intl: input_processor_auto_layer {
   compatible = "zmk,input-processor-auto-layer";
-  #input-processor-cells = <1>;
+  #input-processor-cells = <2>;
 };
 };
