@@ -11,8 +11,8 @@
 
 typedef struct {
   int32_t require_prior_idle_ms;
-  uint32_t excluded_positions[CONFIG_ZMK_PROCESSOR_AUTO_LAYER_MAX_EXCLUDED_POSITIONS];
-  uint8_t num_positions;
+  const uint32_t *excluded_positions;
+  size_t num_positions;
 } processor_auto_layer_config_t;
 
 typedef struct {
@@ -23,11 +23,7 @@ typedef struct {
 } processor_auto_layer_data_t;
 
 static inline bool is_position_excluded(const processor_auto_layer_config_t *config, uint32_t position) {
-  if (config->num_positions > CONFIG_ZMK_PROCESSOR_AUTO_LAYER_MAX_EXCLUDED_POSITIONS) {
-    return false;
-  }
-
-  for (uint8_t i = 0; i < config->num_positions; i++) {
+  for (size_t i = 0; i < config->num_positions; i++) {
     if (config->excluded_positions[i] == position) {
       return true;
     }
@@ -101,17 +97,18 @@ ZMK_SUBSCRIPTION(processor_auto_layer, zmk_position_state_changed);
 ZMK_LISTENER(processor_auto_layer_keycode, handle_keycode_state_changed);
 ZMK_SUBSCRIPTION(processor_auto_layer_keycode, zmk_keycode_state_changed);
 
-#define AUTO_LAYER_INST(n)                                                      \
-static processor_auto_layer_data_t processor_auto_layer_data_##n = {};             \
-static const processor_auto_layer_config_t processor_auto_layer_config_##n = {     \
-  .require_prior_idle_ms = DT_PROP(DT_DRV_INST(0), require_prior_idle_ms),     \
-  .excluded_positions = DT_INST_PROP(n, excluded_positions),                   \
-  .num_positions = DT_INST_PROP_LEN(n, excluded_positions),                    \
-};                                                                             \
-DEVICE_DT_INST_DEFINE(n, &auto_layer_init, NULL,                               \
-                      &processor_auto_layer_data_##n,                          \
-                      &processor_auto_layer_config_##n,                        \
-                      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,      \
+#define AUTO_LAYER_INST(n)                                                            \
+static processor_auto_layer_data_t processor_auto_layer_data_##n = {};                \
+static const uint32_t excluded_positions_##n[] = DT_INST_PROP(n, excluded_positions); \
+static const processor_auto_layer_config_t processor_auto_layer_config_##n = {        \
+  .require_prior_idle_ms = DT_PROP(DT_DRV_INST(0), require_prior_idle_ms),            \
+  .excluded_positions = excluded_positions_##n,                                       \
+  .num_positions = DT_INST_PROP_LEN(n, excluded_positions),                           \
+};                                                                                    \
+DEVICE_DT_INST_DEFINE(n, &auto_layer_init, NULL,                                      \
+                      &processor_auto_layer_data_##n,                                 \
+                      &processor_auto_layer_config_##n,                               \
+                      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,               \
                       &auto_layer_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AUTO_LAYER_INST)
