@@ -13,7 +13,6 @@ LOG_MODULE_REGISTER(zmk_auto_layer, CONFIG_ZMK_LOG_LEVEL);
 
 /* Constants and Types */
 #define MAX_LAYERS ZMK_KEYMAP_LAYERS_LEN
-#define SMALL_ARRAY_THRESHOLD 8
 
 struct auto_layer_config {
   int32_t require_prior_idle_ms;
@@ -41,34 +40,13 @@ static inline bool position_is_excluded(const struct auto_layer_config *config, 
     return false;
   }
 
-  // Use binary search for larger arrays
-  if (config->num_positions > SMALL_ARRAY_THRESHOLD) {
-    size_t left = 0;
-    size_t right = config->num_positions - 1;
-
-    while (left <= right) {
-      size_t mid = (left + right) / 2;
-      uint32_t mid_val = config->excluded_positions[mid];
-
-      if (mid_val == position) {
-        return true;
-      }
-      if (mid_val < position) {
-        left = mid + 1;
-      } else {
-        right = mid - 1;
-      }
-    }
-    return false;
-  }
-
-  // Linear search for small arrays (better cache locality)
   const uint32_t *end = config->excluded_positions + config->num_positions;
   for (const uint32_t *pos = config->excluded_positions; pos < end; pos++) {
     if (*pos == position) {
       return true;
     }
   }
+  
   return false;
 }
 
